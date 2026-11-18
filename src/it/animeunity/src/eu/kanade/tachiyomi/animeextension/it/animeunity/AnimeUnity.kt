@@ -132,7 +132,7 @@ abstract class AnimeUnity :
                     }
                 video?.let {
                     SEpisode.create().apply {
-                        name = "Episodio ${episode.number}"
+                        name = "Episode ${episode.number}"
                         episode_number = episode.number.substringBefore("-").toFloatOrNull() ?: 0F
                         url = "$animePath/${it.id}"
                     }
