@@ -83,6 +83,9 @@ class AnimeDto(
 
 const val DUB_SUFFIX = "#ita"
 
+// Entries saved before the site moved use the old dubbed slug, e.g. "2679-desert-punk-ita"
+val SAnime.isDub get() = url.endsWith(DUB_SUFFIX) || url.endsWith("-ita")
+
 @Serializable
 class LoadedEpisodes(
     val episodes: List<EpisodeDto>,

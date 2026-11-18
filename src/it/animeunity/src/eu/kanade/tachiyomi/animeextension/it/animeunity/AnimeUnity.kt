@@ -75,7 +75,7 @@ abstract class AnimeUnity :
         .use { animeDetailsParse(it) }
         .apply {
             url = anime.url
-            if (anime.url.endsWith(DUB_SUFFIX)) title += " (ITA)"
+            if (anime.isDub) title += " (ITA)"
         }
 
     override fun animeDetailsParse(response: Response): SAnime {
@@ -103,12 +103,12 @@ abstract class AnimeUnity :
     override fun episodeListRequest(anime: SAnime): Request = GET("$baseUrl/anime/${anime.url.substringBefore(DUB_SUFFIX)}", headers)
 
     override suspend fun getEpisodeList(anime: SAnime): List<SEpisode> {
-        val dub = anime.url.endsWith(DUB_SUFFIX)
+        val dub = anime.isDub
+        val animePath = anime.url.substringBefore(DUB_SUFFIX)
         val props = client
             .newCall(episodeListRequest(anime))
             .awaitSuccess()
             .use { it.asJsoup().inertiaProps<AnimeProps>() }
-        val animePath = "${props.anime.id}-${props.anime.slug}"
         val loaded = props.loadedEpisodes ?: return emptyList()
 
         val episodes = loaded.episodes.toMutableList()
@@ -134,7 +134,8 @@ abstract class AnimeUnity :
                     SEpisode.create().apply {
                         name = "Episode ${episode.number}"
                         episode_number = episode.number.substringBefore("-").toFloatOrNull() ?: 0F
-                        url = "$animePath/${it.id}"
+                        // Same format as before the site moved, so episodes in the library keep their dates
+                        url = "/anime/$animePath/${it.id}"
                     }
                 }
             }.sortedByDescending { it.episode_number }
@@ -153,7 +154,7 @@ abstract class AnimeUnity :
     private suspend fun videosForVideoId(path: String): List<Video> {
         val page =
             client
-                .newCall(GET("$baseUrl/anime/$path", headers))
+                .newCall(GET(if (path.startsWith("/")) "$baseUrl$path" else "$baseUrl/anime/$path", headers))
                 .awaitSuccess()
                 .use { it.asJsoup() }
         val iframeUrl = page.inertiaProps<AnimeProps>().embedUrl ?: error("Failed to extract iframe")
